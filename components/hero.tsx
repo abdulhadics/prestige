@@ -34,7 +34,7 @@ export function Hero() {
                         {isCalling ? (
                             <>
                                 <Phone className="mr-2 w-5 h-5" />
-                                End Call
+                                {isAgentSpeaking ? "Isabelle Speaking..." : "Listening..."}
                             </>
                         ) : (
                             <>
