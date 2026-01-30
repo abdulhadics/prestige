@@ -85,16 +85,7 @@ export function useRetell() {
                     ctx.close();
                 }
 
-                // 4. Force Resume Audio Context (Fix for Chrome auto-play policy)
-                // We create a temporary context just to ensure the browser allows audio
-                const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-                if (AudioContext) {
-                    const ctx = new AudioContext();
-                    if (ctx.state === 'suspended') {
-                        await ctx.resume();
-                    }
-                    ctx.close();
-                }
+
 
             } catch (err) {
                 console.error("Failed to start call:", err)
