@@ -3,7 +3,8 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { Call } from "@/types/database"
 
-export const revalidate = 0 // Disable cache for initial load
+export const dynamic = "force-dynamic"
+
 
 export default async function DashboardPage() {
     const cookieStore = cookies()

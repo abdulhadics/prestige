@@ -7,6 +7,8 @@ import { cn } from "@/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Confort Prestige | Expert HVAC & Windows",
   description: "Heat Pumps, Furnaces, and Windows. Book your free quote with Isabelle today.",
