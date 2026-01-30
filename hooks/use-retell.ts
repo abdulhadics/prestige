@@ -36,6 +36,7 @@ export function useRetell() {
 
         retellWebClient.current.on("error", (error) => {
             console.error("Retell Error:", error)
+            alert("Voice Connection Error: " + (error.message || "Unknown error"))
             setIsCalling(false)
         })
 
@@ -52,11 +53,15 @@ export function useRetell() {
         } else {
             try {
                 // 1. Get Access Token from our secure backend
-                // For local demo without backend, we might need a direct call or a simple mock
                 const response = await fetch("/api/register-call")
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+                }
+
                 const data = await response.json()
 
-                if (!data.access_token) throw new Error("No access token")
+                if (!data.access_token) throw new Error("No access token received from server")
 
                 // 2. Start Call
                 await retellWebClient.current?.startCall({
@@ -64,6 +69,11 @@ export function useRetell() {
                 })
             } catch (err) {
                 console.error("Failed to start call:", err)
+                if (err instanceof Error) {
+                    alert("Failed to start call: " + err.message)
+                } else {
+                    alert("Failed to start call. Check console.")
+                }
             }
         }
     }
