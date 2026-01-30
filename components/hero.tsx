@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useRetell } from "@/hooks/use-retell"
 
 export function Hero() {
-    const { isCalling, toggleCall, isAgentSpeaking } = useRetell()
+    const { isCalling, toggleCall, isAgentSpeaking, debugLog } = useRetell()
 
     return (
         <section className="pt-32 pb-20 px-4 bg-gradient-to-b from-primary/20 to-white">
@@ -60,6 +60,15 @@ export function Hero() {
                         <div className="w-2 h-2 rounded-full bg-primary" />
                         <span>Instant Pricing</span>
                     </div>
+                </div>
+
+                {/* VISIBLE DEBUG LOGS FOR USER DIAGNOSIS */}
+                <div className="mt-8 p-4 bg-slate-100 rounded text-xs text-slate-500 font-mono text-left max-w-sm mx-auto">
+                    <p className="font-bold mb-1">Connection Status:</p>
+                    {debugLog.map((log, i) => (
+                        <div key={i}>{log}</div>
+                    ))}
+                    {debugLog.length === 0 && <div>Ready to connect...</div>}
                 </div>
             </div>
         </section>

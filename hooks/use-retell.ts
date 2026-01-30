@@ -7,31 +7,37 @@ export function useRetell() {
     const [isCalling, setIsCalling] = useState(false)
     const [isAgentSpeaking, setIsAgentSpeaking] = useState(false)
     const [isConnecting, setIsConnecting] = useState(false)
+    const [debugLog, setDebugLog] = useState<string[]>([]) // Visible Debug Log
     const retellWebClient = useRef<RetellWebClient | null>(null)
 
+    const addLog = (msg: string) => {
+        console.log("UseRetell:", msg)
+        setDebugLog(prev => [...prev.slice(-4), msg]) // Keep last 5 messages
+    }
+
     useEffect(() => {
-        // Initialize client on mount (Long-lived singleton)
         try {
             retellWebClient.current = new RetellWebClient()
-        } catch (e) {
-            console.error("Client Init Failed", e)
+            addLog("SDK Initialized")
+        } catch (e: any) {
+            addLog("SDK Init Failed: " + e.message)
         }
 
-        // Event Listeners
         retellWebClient.current?.on("call_started", () => {
-            console.log("Call started")
+            addLog("Event: Call Started")
             setIsCalling(true)
             setIsConnecting(false)
         })
 
         retellWebClient.current?.on("call_ended", () => {
-            console.log("Call ended")
+            addLog("Event: Call Ended")
             setIsCalling(false)
             setIsAgentSpeaking(false)
             setIsConnecting(false)
         })
 
         retellWebClient.current?.on("agent_start_talking", () => {
+            // Don't spam logs with talking
             setIsAgentSpeaking(true)
         })
 
@@ -40,8 +46,7 @@ export function useRetell() {
         })
 
         retellWebClient.current?.on("error", (error) => {
-            console.error("Retell Error:", error)
-            alert("Voice Connection Error: " + (error.message || "Unknown error"))
+            addLog("Event: Error - " + error.message)
             setIsCalling(false)
             setIsConnecting(false)
         })
@@ -54,51 +59,52 @@ export function useRetell() {
     }, [])
 
     const toggleCall = async () => {
-        if (isConnecting) return; // Prevent double clicks
+        if (isConnecting) return;
 
         if (isCalling) {
+            addLog("Stopping Call...")
             setIsConnecting(true)
             retellWebClient.current?.stopCall()
         } else {
             setIsConnecting(true)
+            setDebugLog([]) // Clear logs on new call
+            addLog("Starting Connection...")
+
             try {
                 // 1. Get Access Token
                 const response = await fetch("/api/register-call")
-
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`)
-                }
+                if (!response.ok) throw new Error("API " + response.status)
 
                 const data = await response.json()
+                addLog("Token Received")
 
-                if (!data.access_token) throw new Error("No access token received from server")
+                if (!data.access_token) throw new Error("No Token")
 
                 // 2. Start Call
-                // Use the proven settings: sampleRate 24000
+                addLog("Starting SDK Call...")
                 await retellWebClient.current?.startCall({
                     accessToken: data.access_token,
                     sampleRate: 24000,
                 })
 
-                // 3. Audio Wakeup (The Fix that worked)
+                // 3. Audio Wakeup
+                addLog("Waking Audio Context...")
                 const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
                 if (AudioContext) {
                     const ctx = new AudioContext();
                     if (ctx.state === 'suspended') {
                         await ctx.resume();
+                        addLog("Audio Context Resumed")
                     }
                     ctx.close();
+                } else {
+                    addLog("No Audio Context Found")
                 }
 
-            } catch (err) {
-                console.error("Failed to start call:", err)
+            } catch (err: any) {
+                addLog("Error: " + err.message)
                 setIsConnecting(false)
                 setIsCalling(false)
-                if (err instanceof Error) {
-                    alert("Call Failed: " + err.message)
-                } else {
-                    alert("Call Failed. Check console.")
-                }
             }
         }
     }
@@ -108,5 +114,6 @@ export function useRetell() {
         isAgentSpeaking,
         isConnecting,
         toggleCall,
+        debugLog // Export logs
     }
 }
