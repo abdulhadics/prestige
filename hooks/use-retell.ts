@@ -62,12 +62,7 @@ export function useRetell() {
         } else {
             setIsConnecting(true)
             try {
-                // 1. Warm up Microphone & Permissions first
-                console.log("Requesting microphone...")
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                stream.getTracks().forEach(track => track.stop())
-
-                // 2. Get Access Token
+                // 1. Get Access Token
                 const response = await fetch("/api/register-call")
 
                 if (!response.ok) {
@@ -78,13 +73,14 @@ export function useRetell() {
 
                 if (!data.access_token) throw new Error("No access token received from server")
 
-                // 3. Start Call
+                // 2. Start Call
                 await retellWebClient.current?.startCall({
                     accessToken: data.access_token,
                     sampleRate: 24000,
                 })
 
-                // 4. Force Resume Audio Context
+                // 3. Force Resume Audio Context (Fix for Chrome/Edge auto-play policy)
+                // This wakes up the audio engine if the browser has put it to sleep
                 const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
                 if (AudioContext) {
                     const ctx = new AudioContext();
