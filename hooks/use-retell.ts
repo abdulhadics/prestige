@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import { RetellWebClient } from "retell-client-js-sdk"
 
-const agentId = "YOUR_AGENT_ID_HERE" // TODO: Replace with env var or client asset
-
 export function useRetell() {
     const [isCalling, setIsCalling] = useState(false)
     const [isAgentSpeaking, setIsAgentSpeaking] = useState(false)
@@ -52,7 +50,13 @@ export function useRetell() {
             retellWebClient.current?.stopCall()
         } else {
             try {
-                // 1. Get Access Token from our secure backend
+                // 1. Warm up Microphone & Permissions first
+                // This prevents the browser from blocking the audio context
+                console.log("Requesting microphone access...")
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                stream.getTracks().forEach(track => track.stop()) // Stop immediate use, just waking it up
+
+                // 2. Get Access Token from our secure backend
                 const response = await fetch("/api/register-call")
 
                 if (!response.ok) {
@@ -63,16 +67,33 @@ export function useRetell() {
 
                 if (!data.access_token) throw new Error("No access token received from server")
 
-                // 2. Start Call
+                console.log("Starting call with token...")
+
+                // 3. Start Call with explicit configuration
                 await retellWebClient.current?.startCall({
                     accessToken: data.access_token,
+                    sampleRate: 24000,
+                    captureDeviceId: "default",
+                    playbackDeviceId: "default"
                 })
+
+                // 4. Force Resume Audio Context (Fix for Chrome auto-play policy)
+                // We create a temporary context just to ensure the browser allows audio
+                const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    if (ctx.state === 'suspended') {
+                        await ctx.resume();
+                    }
+                    ctx.close();
+                }
+
             } catch (err) {
                 console.error("Failed to start call:", err)
                 if (err instanceof Error) {
-                    alert("Failed to start call: " + err.message)
+                    alert("Call Failed: " + err.message)
                 } else {
-                    alert("Failed to start call. Check console.")
+                    alert("Call Failed. Check console.")
                 }
             }
         }
