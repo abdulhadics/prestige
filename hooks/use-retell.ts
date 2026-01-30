@@ -69,10 +69,21 @@ export function useRetell() {
 
                 console.log("Starting call with token...")
 
-                // 3. Start Call with minimal config to let SDK match browser defaults
+                // 3. Start Call with minimal config
                 await retellWebClient.current?.startCall({
                     accessToken: data.access_token,
                 })
+
+                // 4. Force Resume Audio Context (Fix for Chrome/Edge auto-play policy)
+                // This wakes up the audio engine if the browser has put it to sleep
+                const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    if (ctx.state === 'suspended') {
+                        await ctx.resume();
+                    }
+                    ctx.close();
+                }
 
                 // 4. Force Resume Audio Context (Fix for Chrome auto-play policy)
                 // We create a temporary context just to ensure the browser allows audio
