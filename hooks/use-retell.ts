@@ -94,7 +94,6 @@ export function useRetell() {
                 console.log("Starting SDK...")
                 await client.startCall({
                     accessToken: data.access_token,
-                    sampleRate: 24000,
                 })
 
                 // 5. Minimal Audio Context Wakeup (Just in case)
