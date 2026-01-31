@@ -34,6 +34,9 @@ export function useRetell() {
                 console.log("Call started")
                 setIsCalling(true)
             })
+            client.on("audio_stream_started", () => {
+                console.log("Audio Stream Started (You should hear voice now)")
+            })
             client.on("call_ended", () => {
                 console.log("Call ended")
                 setIsCalling(false)
