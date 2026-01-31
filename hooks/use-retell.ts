@@ -49,10 +49,13 @@ export function useRetell() {
                 setIsCalling(false)
             })
 
-            // 3. Get Token (POST = No Cache)
-            const response = await fetch("/api/register-call", {
+            // 3. Get Token (POST = No Cache + Query Params for absolute uniqueness)
+            const response = await fetch(`/api/register-call?t=${Date.now()}&r=${Math.random()}`, {
                 method: "POST",
-                cache: "no-store"
+                cache: "no-store",
+                headers: {
+                    "Pragma": "no-cache"
+                }
             })
             if (!response.ok) throw new Error("API Error")
             const data = await response.json()
