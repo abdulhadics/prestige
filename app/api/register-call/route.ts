@@ -7,7 +7,7 @@ const retell = new Retell({
     apiKey: process.env.RETELL_API_KEY || "key_placeholder",
 })
 
-export async function GET() {
+export async function POST() {
     try {
         const agentId = process.env.RETELL_AGENT_ID;
 
