@@ -78,7 +78,7 @@ export function useRetell() {
 
                 // 3. Get Access Token
                 console.log("Fetching token...")
-                const response = await fetch("/api/register-call", {
+                const response = await fetch(`/api/register-call?t=${Date.now()}`, {
                     cache: 'no-store'
                 })
                 if (!response.ok) throw new Error(`API Error: ${response.status}`)
