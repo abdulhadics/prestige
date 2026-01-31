@@ -49,8 +49,9 @@ export function useRetell() {
                 setIsCalling(false)
             })
 
-            // 3. Get Token (POST = No Cache + Query Params for absolute uniqueness)
-            const response = await fetch(`/api/register-call?t=${Date.now()}&r=${Math.random()}`, {
+            // 3. Get Token (Renamed Route to force update)
+            console.log("Fetching token from NEW route...")
+            const response = await fetch(`/api/get-voice-token?t=${Date.now()}&r=${Math.random()}`, {
                 method: "POST",
                 cache: "no-store",
                 headers: {
