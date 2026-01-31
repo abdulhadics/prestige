@@ -34,11 +34,11 @@ export function Hero() {
                         {isCalling ? (
                             <>
                                 <Phone className="mr-2 w-5 h-5" />
-                                {isAgentSpeaking ? "Isabelle Speaking..." : "Listening..."}
+                                {"End Voice Session"}
                             </>
                         ) : (
                             <>
-                                Speak to Isabelle
+                                {"Start Voice Session (v3)"}
                                 <Phone className="ml-2 w-5 h-5" />
                             </>
                         )}
