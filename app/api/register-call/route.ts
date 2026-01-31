@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import Retell from "retell-sdk"
 
+export const dynamic = "force-dynamic" // Prevent caching of the token
+
 const retell = new Retell({
     apiKey: process.env.RETELL_API_KEY || "key_placeholder",
 })
