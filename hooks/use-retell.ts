@@ -65,7 +65,7 @@ export function useRetell() {
             })
             if (!response.ok) throw new Error("API Error")
             const data = await response.json()
-
+            console.log("DEBUG: Raw Access Token:", data.access_token)
 
             // 4. Start (Defaults Only)
             await client.startCall({
