@@ -57,6 +57,7 @@ export function useRetell() {
             const response = await fetch(`/api/voice-token-v2?t=${Date.now()}&r=${Math.random()}`, {
                 method: "POST",
                 cache: "no-store",
+                body: JSON.stringify({}),
                 headers: {
                     "Pragma": "no-cache"
                 }
