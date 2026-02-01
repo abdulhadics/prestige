@@ -4,14 +4,18 @@ import Retell from "retell-sdk"
 export const dynamic = "force-dynamic" // Prevent caching of the token
 export const runtime = "nodejs" // Ensure robust crypto availability
 
+const apiKey = (process.env.RETELL_API_KEY || "").trim()
 const retell = new Retell({
-    apiKey: process.env.RETELL_API_KEY || "key_placeholder",
+    apiKey: apiKey,
 })
 
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { agent_id } = body
+        const agent_id = (body.agent_id || process.env.RETELL_AGENT_ID || "").trim()
+
+        console.log(`[API V2] Generating token for Agent: ${agent_id}`)
+        console.log(`[API V2] Using API Key (last 4): ...${apiKey.slice(-4)}`)
 
         if (!agent_id) {
             return NextResponse.json(
