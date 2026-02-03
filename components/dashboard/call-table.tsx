@@ -1,9 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
-import type { Call } from "@/types/database"
+import { useState } from "react"
+import { useCalls } from "@/hooks/use-calls"
 import {
     Table,
     TableBody,
@@ -15,84 +13,31 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { formatDistanceToNow } from "date-fns"
-import { Play } from "lucide-react"
+import { Play, FileText, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { TranscriptViewer } from "./transcript-viewer"
+import type { CallLog } from "@/types/call"
 
-export function CallTable({ initialCalls }: { initialCalls: Call[] }) {
-    const [calls, setCalls] = useState<Call[]>(initialCalls)
-    const router = useRouter()
+export function CallTable() {
+    const { calls, isLoading } = useCalls()
+    const [selectedCall, setSelectedCall] = useState<CallLog | null>(null)
+    const [isTranscriptOpen, setIsTranscriptOpen] = useState(false)
 
-    useEffect(() => {
-        const channel = supabase
-            .channel('realtime calls')
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'calls'
-            }, (payload) => {
-                console.log('Realtime Event:', payload)
-
-                if (payload.eventType === 'INSERT') {
-                    setCalls((current) => [payload.new as Call, ...current])
-                }
-                else if (payload.eventType === 'UPDATE') {
-                    setCalls((current) => current.map(call =>
-                        call.id === (payload.new as Call).id ? (payload.new as Call) : call
-                    ))
-                }
-                else if (payload.eventType === 'DELETE') {
-                    setCalls((current) => current.filter(call =>
-                        call.id !== (payload.old as { id: number }).id
-                    ))
-                }
-            })
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
-        }
-    }, [])
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut()
-        router.refresh()
-        router.push('/login')
+    const handleViewTranscript = (call: CallLog) => {
+        setSelectedCall(call)
+        setIsTranscriptOpen(true)
     }
 
-    const simulateCall = async () => {
-        const { error } = await supabase.from('calls').insert({
-            caller_number: '+1 (555) 019-' + Math.floor(Math.random() * 1000),
-            status: 'New',
-            lead_score: Math.floor(Math.random() * 100),
-            summary: 'Test Call: Client asking about HVAC maintenance prices.',
-            recording_url: null,
-            call_id: 'test_' + Date.now()
-        })
-
-        if (error) {
-            console.error('Error simulating call:', error)
-            alert('Failed to insert test call. Check console. Is RLS enabling inserts?')
-        }
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-48 bg-white rounded-lg border">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            </div>
+        )
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Recent Inbound Calls</h2>
-                    <p className="text-sm text-slate-500">Monitoring all incoming leads.</p>
-                </div>
-
-                <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" onClick={simulateCall} className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200">
-                        + Demo Call
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleLogout} className="border-slate-200 hover:bg-slate-50">
-                        Sign Out
-                    </Button>
-                </div>
-            </div>
-
+        <>
             <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader className="bg-slate-50">
@@ -102,12 +47,12 @@ export function CallTable({ initialCalls }: { initialCalls: Call[] }) {
                             <TableHead className="font-semibold text-slate-700">Phone</TableHead>
                             <TableHead className="font-semibold text-slate-700">Summary</TableHead>
                             <TableHead className="font-semibold text-slate-700">Time</TableHead>
-                            <TableHead className="font-semibold text-slate-700">Audio</TableHead>
+                            <TableHead className="font-semibold text-slate-700 text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {calls.map((call) => (
-                            <TableRow key={call.id} className="hover:bg-slate-50/50">
+                            <TableRow key={call.id || call.call_id || Math.random()} className="hover:bg-slate-50/50">
                                 <TableCell>
                                     <Badge variant={
                                         call.status === 'Urgent' ? 'destructive' :
@@ -127,29 +72,48 @@ export function CallTable({ initialCalls }: { initialCalls: Call[] }) {
                                     {call.summary || "Processing..."}
                                 </TableCell>
                                 <TableCell className="text-slate-500 whitespace-nowrap text-sm">
-                                    {formatDistanceToNow(new Date(call.created_at), { addSuffix: true })}
+                                    {call.created_at ? formatDistanceToNow(new Date(call.created_at), { addSuffix: true }) : 'Just now'}
                                 </TableCell>
-                                <TableCell>
-                                    {call.recording_url ? (
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-primary" onClick={() => window.open(call.recording_url || "", "_blank")}>
-                                            <Play className="h-4 w-4" />
+                                <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleViewTranscript(call)}
+                                            title="View Transcript"
+                                        >
+                                            <FileText className="h-4 w-4 text-slate-500" />
                                         </Button>
-                                    ) : (
-                                        <span className="text-xs text-slate-400">...</span>
-                                    )}
+                                        {call.recording_url && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => window.open(call.recording_url || "", "_blank")}
+                                                title="Play Recording"
+                                            >
+                                                <Play className="h-4 w-4 text-indigo-500" />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
                         {calls.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center h-24 text-slate-400">
-                                    No calls yet. Waiting for Isabelle...
+                                    No calls found.
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
             </div>
-        </div>
+
+            <TranscriptViewer
+                call={selectedCall}
+                open={isTranscriptOpen}
+                onOpenChange={setIsTranscriptOpen}
+            />
+        </>
     )
 }

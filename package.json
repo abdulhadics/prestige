@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@humeai/voice-react": "^0.2.12",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-toggle": "^1.1.9",
@@ -29,6 +30,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-virtualized": "^9.22.5",
+    "recharts": "^3.7.0",
     "remeda": "^2.0.9",
     "retell-client-js-sdk": "^2.0.7",
     "retell-sdk": "^4.66.0",
